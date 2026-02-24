@@ -15,8 +15,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log("BODY RECEBIDO:", req.body)
-
     const summaryData = req.body?.summaryData || req.body
 
     if (!summaryData) {
@@ -49,7 +47,7 @@ Forneça:
 5. Estratégia prática de melhoria
 6. Sugestões de otimização de consistência
 
-Seja direto, estratégico e orientado a performance.
+Seja direto e estratégico.
         `,
         max_output_tokens: 800
       })
@@ -64,8 +62,21 @@ Seja direto, estratégico e orientado a performance.
       })
     }
 
+    // 🔥 Extração correta do texto
+    let textOutput = ""
+
+    if (data.output_text) {
+      textOutput = data.output_text
+    } else if (data.output && Array.isArray(data.output)) {
+      textOutput = data.output
+        .flatMap(item => item.content || [])
+        .filter(c => c.type === "output_text")
+        .map(c => c.text)
+        .join("\n")
+    }
+
     return res.status(200).json({
-      content: data.output_text || "Sem conteúdo retornado"
+      content: textOutput || "Sem conteúdo retornado"
     })
 
   } catch (error) {
