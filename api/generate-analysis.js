@@ -32,22 +32,51 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-4.1-mini",
         input: `
-Você é um analista estratégico de performance de hábitos.
+Você é um analista de performance comportamental com base em neurociência aplicada.
 
-Analise os seguintes dados:
+Analise os dados abaixo:
 
 ${JSON.stringify(summaryData, null, 2)}
 
-Forneça:
+Regras obrigatórias de resposta:
+- Máximo 180 palavras
+- Linguagem simples e direta
+- Nada de textos longos ou técnicos
+- Resposta estruturada e escaneável
+- Pensado para caber sem rolagem excessiva em mobile
 
-1. Diagnóstico geral
-2. Pontos fortes
-3. Pontos fracos
-4. Riscos comportamentais
-5. Estratégia prática de melhoria
-6. Sugestões de otimização de consistência
+Estruture EXATAMENTE neste formato:
 
-Seja direto e estratégico.
+🔎 Score geral: X/10  
+(1 frase explicando o porquê da nota)
+
+🏆 Hábito destaque:
+(Nome do hábito mais relevante + 1 frase objetiva explicando por que ele chama atenção — positivo ou negativo)
+
+✅ Você está acertando:
+- Bullet curto
+- Bullet curto
+
+⚠️ Precisa ajustar:
+- Bullet curto
+- Bullet curto
+
+🧠 Ajuste estratégico:
+(3 ações práticas, simples e específicas para próxima semana)
+
+Use princípios básicos de neurociência comportamental:
+- Reforço positivo
+- Construção de consistência
+- Pequenas vitórias
+- Redução de fricção
+
+Evite:
+- Jargão técnico
+- Textos longos
+- Explicações genéricas
+- Repetição do que já está óbvio nos dados
+
+Seja direto, acionável e objetivo.
         `,
         max_output_tokens: 800
       })
