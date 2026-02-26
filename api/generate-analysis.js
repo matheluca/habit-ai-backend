@@ -46,6 +46,7 @@ Regras obrigatórias de resposta:
 - Pensado para caber sem rolagem excessiva em mobile
 - trate e remova qualquer termo de inglês, evite os termos recebidos de "done,skipped,staks,none", traduza para o contexto.
 - skipped não é ruim, ele é um descanso. não considere ele como algo negativo. 
+- na avaliação sempre considere o contexto (descrição) do grupo e do hábito, se enviado. Como é um campo opcional, pode ser que não tenha. 
 
 Estruture EXATAMENTE neste formato:
 
