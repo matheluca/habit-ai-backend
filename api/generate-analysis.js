@@ -45,6 +45,7 @@ Regras obrigatórias de resposta:
 - Resposta estruturada e escaneável
 - Pensado para caber sem rolagem excessiva em mobile
 - trate e remova qualquer termo de inglês, evite os termos recebidos de "done,skipped,staks,none", traduza para o contexto.
+- skipped não é ruim, ele é um descanso. não considere ele como algo negativo. 
 
 Estruture EXATAMENTE neste formato:
 
