@@ -44,6 +44,7 @@ Regras obrigatórias de resposta:
 - Nada de textos longos ou técnicos
 - Resposta estruturada e escaneável
 - Pensado para caber sem rolagem excessiva em mobile
+- trate e remova qualquer termo de inglês, evite os termos recebidos de "done,skipped,staks,none", traduza para o contexto.
 
 Estruture EXATAMENTE neste formato:
 
