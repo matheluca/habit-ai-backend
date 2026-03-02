@@ -34,7 +34,7 @@ Não invente dados.
 Não faça inferências psicológicas.
 Não dê conselhos.
 Máximo 8 linhas.
-Se dados insuficientes, escreva:
+Se receber nenhum dado, escreva:
 "Dados insuficientes para análise conclusiva."
 Resposta em português, texto corrido.
 
