@@ -5,7 +5,7 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req, res) {
-  // ✅ LIBERAR CORS
+  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -27,12 +27,33 @@ export default async function handler(req, res) {
 
     const limitedComments = comments.slice(0, 50);
 
+    // 👉 formata os comentários com contexto
+    const formatted = limitedComments.map((c) => {
+      const statusLabel =
+        c.status === "done"
+          ? "concluído"
+          : c.status === "skipped"
+          ? "pulado"
+          : "não concluído";
+
+      return `Data: ${c.date} | Status: ${statusLabel}\nComentário: ${c.text}`;
+    });
+
     const prompt = `
 Resuma os comentários abaixo dos últimos 7 dias de um hábito.
-Identifique padrões, progresso e dificuldades.
+
+Contexto:
+- Cada comentário informa se o hábito foi concluído no dia.
+- Identifique padrões entre comportamento e comentários.
+
+Objetivo:
+- Identificar progresso
+- Dificuldades recorrentes
+- Tendência geral
+
 Seja direto, em português, máximo 8 linhas.
 
-${limitedComments.join("\n")}
+${formatted.join("\n\n")}
 `;
 
     const completion = await openai.chat.completions.create({
