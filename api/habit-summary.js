@@ -28,9 +28,21 @@ export default async function handler(req, res) {
     const limitedComments = comments.slice(0, 50);
 
     const prompt = `
-Resuma os comentários abaixo dos últimos 7 dias de um hábito.
-Identifique padrões, progresso e dificuldades.
-Seja direto, em português, máximo 8 linhas.
+Você é um analista comportamental objetivo.
+Analise apenas informações explicitamente fornecidas.
+Não invente dados.
+Não faça inferências psicológicas.
+Não dê conselhos.
+Máximo 8 linhas.
+Se dados insuficientes, escreva:
+"Dados insuficientes para análise conclusiva."
+Resposta em português, texto corrido.
+
+Analise os comentários dos últimos 7 dias e identifique:
+- padrões observáveis
+- progresso ou regressão explícita
+- dificuldades mencionadas
+- sugestões explicitamente escritas
 
 ${limitedComments.join("\n")}
 `;
