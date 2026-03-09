@@ -47,7 +47,7 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCORSHeaders({ 'Content-Type': 'application/json' }),
         error: 'Missing authorization token',
       };
     }
@@ -70,7 +70,7 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCORSHeaders({ 'Content-Type': 'application/json' }),
         error: 'Invalid token',
       };
     }
@@ -93,7 +93,7 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCORSHeaders({ 'Content-Type': 'application/json' }),
         error: 'Token expired. Please login again.',
       };
     }
@@ -115,11 +115,11 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 429,
-        headers: {
+        headers: getCORSHeaders({
           'Content-Type': 'application/json',
           'Retry-After': String(rateLimitUID.retryAfter),
           ...formatRateLimitHeaders(rateLimitUID),
-        },
+        }),
         error: 'Too many requests. Please try again later.',
       };
     }
@@ -139,11 +139,11 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 429,
-        headers: {
+        headers: getCORSHeaders({
           'Content-Type': 'application/json',
           'Retry-After': String(rateLimitIP.retryAfter),
           ...formatRateLimitHeaders(rateLimitIP),
-        },
+        }),
         error: 'Too many requests from this IP.',
       };
     }
@@ -164,7 +164,7 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       return {
         success: false,
         statusCode: 429,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCORSHeaders({ 'Content-Type': 'application/json' }),
         error: 'Suspicious activity detected.',
       };
     }
@@ -173,9 +173,9 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
     return {
       success: true,
       statusCode: 200,
-      headers: {
+      headers: getCORSHeaders({
         ...formatRateLimitHeaders(rateLimitUID),
-      },
+      }),
       user: { uid, email, iat },
       clientIP: ip,
     };
@@ -185,12 +185,27 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
     return {
       success: false,
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: getCORSHeaders({ 'Content-Type': 'application/json' }),
       error: 'Internal server error',
     };
   }
 }
 
+/**
+ * Helper para adicionar CORS headers
+ */
+function getCORSHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    ...headers,
+  };
+}
+
+/**
+ * Helper para resposta HTTP padronizada com CORS
+ */
 export function createResponse(
   statusCode: number,
   body: Record<string, any>,
@@ -198,9 +213,9 @@ export function createResponse(
 ) {
   return new Response(JSON.stringify(body), {
     status: statusCode,
-    headers: {
+    headers: getCORSHeaders({
       'Content-Type': 'application/json',
       ...headers,
-    },
+    }),
   });
 }
