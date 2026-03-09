@@ -1,11 +1,5 @@
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-/**
- * JWT VALIDATOR
- * Valida tokens Firebase usando chaves públicas do Google
- * Zero dependência de FIREBASE_PRIVATE_KEY
- */
-
 const GOOGLE_JWKS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const FIREBASE_PROJECT_ID = 'kangal-habit';
 
@@ -18,11 +12,13 @@ function initializeJWKS() {
   return jwks;
 }
 
-export async function validateFirebaseToken(token: string): Promise<{
+export interface FirebaseToken {
   uid: string;
   email: string;
   iat: number;
-}> {
+}
+
+export async function validateFirebaseToken(token: string): Promise<FirebaseToken> {
   try {
     const jwksSet = initializeJWKS();
 
@@ -33,9 +29,9 @@ export async function validateFirebaseToken(token: string): Promise<{
 
     const payload = verified.payload;
 
-    const uid = payload.sub;
-    const email = payload.email || '';
-    const iat = Math.floor((payload.iat || 0) * 1);
+    const uid = payload.sub as string;
+    const email = (payload.email as string) || '';
+    const iat = Math.floor((payload.iat || 0));
 
     if (!uid) {
       throw new Error('UID não encontrado no token');
@@ -48,11 +44,7 @@ export async function validateFirebaseToken(token: string): Promise<{
   }
 }
 
-export async function validateFirebaseTokenSafe(token: string): Promise<{
-  uid: string;
-  email: string;
-  iat: number;
-} | null> {
+export async function validateFirebaseTokenSafe(token: string): Promise<FirebaseToken | null> {
   try {
     return await validateFirebaseToken(token);
   } catch (error) {
