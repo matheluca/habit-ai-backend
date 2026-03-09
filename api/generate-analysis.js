@@ -3,12 +3,13 @@ import { logSecurityEvent } from '../src/lib/audit-logger';
 
 export default async function handler(req, res) {
   // =============================
-  // CORS
+  // CORS - PRIMEIRO
   // =============================
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   
+  // ✅ HANDLE OPTIONS PRIMEIRO (antes de qualquer autenticação)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -140,47 +141,4 @@ Seja direto, acionável e objetivo.
     }
 
     // 🔥 Extração correta do texto
-    let textOutput = "";
-    if (data.output_text) {
-      textOutput = data.output_text;
-    } else if (data.output && Array.isArray(data.output)) {
-      textOutput = data.output
-        .flatMap(item => item.content || [])
-        .filter(c => c.type === "output_text")
-        .map(c => c.text)
-        .join("\n");
-    }
-
-    // ✅ PASSO 5: LOG - Sucesso
-    await logSecurityEvent({
-      type: 'API_CALL_COMPLETED',
-      uid,
-      ip,
-      endpoint: '/api/generate-analysis',
-      statusCode: 200,
-    });
-
-    // ✅ PASSO 6: Adicionar headers de rate limit na resposta
-    Object.entries(auth.headers).forEach(([key, value]) => {
-      res.setHeader(key, value);
-    });
-
-    return res.status(200).json({
-      content: textOutput || "Sem conteúdo retornado"
-    });
-
-  } catch (error) {
-    console.error("Erro interno:", error);
-
-    await logSecurityEvent({
-      type: 'API_CALL_ERROR',
-      endpoint: '/api/generate-analysis',
-      statusCode: 500,
-      details: { error: error instanceof Error ? error.message : 'Unknown error' },
-    });
-
-    return res.status(500).json({
-      error: "Erro ao gerar análise"
-    });
-  }
-}
+    let t
