@@ -1,10 +1,5 @@
 import { authenticateAndRateLimit, createResponse } from '../src/lib/auth-middleware';
 import { logSecurityEvent } from '../src/lib/audit-logger';
-import { z } from 'zod';
-
-const GenerateAnalysisRequestSchema = z.object({
-  summaryData: z.record(z.any()).optional(),
-}).strict().catchall(z.any()); // Permite qualquer campo extra
 
 export default async function handler(req, res) {
   // =============================
