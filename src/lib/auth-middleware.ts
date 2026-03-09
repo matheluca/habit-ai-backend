@@ -1,6 +1,4 @@
-import {
-  validateFirebaseToken,
-} from './jwt-validator';
+import { validateFirebaseToken, FirebaseToken } from './jwt-validator';
 import {
   checkRateLimitByUID,
   checkRateLimitByIP,
@@ -9,29 +7,30 @@ import {
   getClientIP,
   formatRateLimitHeaders,
 } from './rate-limiter';
-import { logSecurityEvent } from './audit-logger';
+import { logSecurityEvent, SecurityEventType } from './audit-logger';
 
-/**
- * MIDDLEWARE DE AUTENTICAÇÃO & RATE LIMITING
- * Valida JWT via Google JWKS + aplica proteções
- */
-
-export async function authenticateAndRateLimit(req: Request): Promise<{
+export interface AuthResult {
   success: boolean;
   statusCode: number;
   headers: Record<string, string>;
   error?: string;
-  user?: {
-    uid: string;
-    email: string;
-    iat: number;
-  };
+  user?: FirebaseToken;
   clientIP?: string;
-}> {
+}
+
+function getCORSHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    ...headers,
+  };
+}
+
+export async function authenticateAndRateLimit(req: Request): Promise<AuthResult> {
   try {
     const ip = getClientIP(req);
 
-    // PASSO 1: Extrair Token
     const authHeader = req.headers.get('authorization') || '';
     const token = authHeader.replace('Bearer ', '');
 
@@ -52,8 +51,7 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       };
     }
 
-    // PASSO 2: Validar JWT contra Google JWKS
-    let decoded;
+    let decoded: FirebaseToken;
     try {
       decoded = await validateFirebaseToken(token);
     } catch (error) {
@@ -79,7 +77,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
     const email = decoded.email;
     const iat = decoded.iat;
 
-    // PASSO 3: Validar Idade do Token (< 1 hora)
     if (!validateTokenAge(iat)) {
       await logSecurityEvent({
         type: 'TOKEN_INVALID',
@@ -98,7 +95,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       };
     }
 
-    // PASSO 4: Rate Limit por UID
     const endpoint = new URL(req.url).pathname;
     const rateLimitUID = await checkRateLimitByUID(uid, endpoint);
 
@@ -124,7 +120,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       };
     }
 
-    // PASSO 5: Rate Limit por IP
     const rateLimitIP = await checkRateLimitByIP(ip, endpoint);
 
     if (!rateLimitIP.allowed) {
@@ -148,7 +143,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       };
     }
 
-    // PASSO 6: Detectar Anomalia (5+ em 2min)
     const anomaly = await checkAnomalyPattern(uid, endpoint);
 
     if (anomaly.isAnomaly) {
@@ -169,7 +163,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
       };
     }
 
-    // SUCESSO
     return {
       success: true,
       statusCode: 200,
@@ -191,21 +184,6 @@ export async function authenticateAndRateLimit(req: Request): Promise<{
   }
 }
 
-/**
- * Helper para adicionar CORS headers
- */
-function getCORSHeaders(headers: Record<string, string> = {}): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    ...headers,
-  };
-}
-
-/**
- * Helper para resposta HTTP padronizada com CORS
- */
 export function createResponse(
   statusCode: number,
   body: Record<string, any>,
