@@ -1,7 +1,4 @@
-/**
- * LOGGER DE AUDITORIA
- * Registra eventos de segurança (A09)
- */
+import { SecurityEventType } from './audit-logger';
 
 export type SecurityEventType =
   | 'RATE_LIMIT_EXCEEDED'
@@ -15,7 +12,7 @@ export type SecurityEventType =
 
 export interface SecurityEvent {
   type: SecurityEventType;
-  timestamp: string;
+  timestamp?: string;
   uid?: string;
   ip?: string;
   endpoint: string;
