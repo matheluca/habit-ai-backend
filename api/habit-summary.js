@@ -31,6 +31,26 @@ export default async function handler(req, res) {
 
     const limitedComments = comments.filter(Boolean).slice(0, 50);
 
+    // limpeza + estruturação
+    const commentText = limitedComments
+      .map(c => {
+        const cleanText = (c.text || "")
+          .replace(/<[^>]*>/g, "")
+          .trim();
+
+        if (!cleanText) return null;
+
+        return `${c.date} | ${c.status} | ${cleanText}`;
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    if (!commentText) {
+      return res.status(400).json({
+        error: "No valid comment text"
+      });
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
@@ -59,7 +79,7 @@ Analise os comentários dos últimos 7 dias e identifique:
 - sugestões explicitamente escritas
 
 Comentários:
-${limitedComments.map(c => c.text).join("\n")}
+${commentText}
           `,
         },
       ],
