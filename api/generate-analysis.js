@@ -1,35 +1,34 @@
 import { authenticateAndRateLimit, createResponse } from '../src/lib/auth-middleware';
 import { logSecurityEvent } from '../src/lib/audit-logger';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // =============================
-  // CORS - PRIMEIRO
+  // CORS
   // =============================
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
-  // ✅ HANDLE OPTIONS PRIMEIRO (antes de qualquer autenticação)
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     // ✅ PASSO 1: AUTENTICAÇÃO & RATE LIMIT & ANOMALIA
-    const auth = await authenticateAndRateLimit(
-      new Request(new URL(`http://${req.headers.host}${req.url}`), {
-        method: req.method,
-        headers: new Headers(req.headers),
-        body: JSON.stringify(req.body),
-      })
-    );
+    const authReq = new Request(new URL(`http://${req.headers.host}${req.url}`), {
+      method: req.method,
+      headers: new Headers(req.headers as Record<string, string>),
+      body: JSON.stringify(req.body),
+    });
+
+    const auth = await authenticateAndRateLimit(authReq);
 
     if (!auth.success) {
-      // Adicionar headers de rate limit se existirem
       Object.entries(auth.headers).forEach(([key, value]) => {
         res.setHeader(key, value);
       });
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { uid } = auth.user;
+    const { uid } = auth.user!;
     const ip = auth.clientIP;
 
     // ✅ PASSO 2: LOG - API chamada
@@ -66,19 +65,19 @@ export default async function handler(req, res) {
       });
 
       return res.status(400).json({
-        error: "Nenhum dado recebido no body"
+        error: 'Nenhum dado recebido no body'
       });
     }
 
-    // ✅ PASSO 4: CHAMAR OPENAI (seu código atual)
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
+    // ✅ PASSO 4: CHAMAR OPENAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
+        model: 'gpt-4.1-mini',
         input: `
 Você é um analista de performance comportamental com base em neurociência aplicada.
 Analise os dados abaixo:
@@ -121,10 +120,10 @@ Seja direto, acionável e objetivo.
       })
     });
 
-    const data = await openaiResponse.json();
+    const data = await openaiResponse.json() as any;
 
     if (!openaiResponse.ok) {
-      console.error("Erro OpenAI:", data);
+      console.error('Erro OpenAI:', data);
 
       await logSecurityEvent({
         type: 'API_CALL_ERROR',
@@ -136,9 +135,52 @@ Seja direto, acionável e objetivo.
       });
 
       return res.status(500).json({
-        error: data.error?.message || "Erro ao chamar OpenAI"
+        error: data.error?.message || 'Erro ao chamar OpenAI'
       });
     }
 
     // 🔥 Extração correta do texto
-    let t
+    let textOutput = '';
+    if (data.output_text) {
+      textOutput = data.output_text;
+    } else if (data.output && Array.isArray(data.output)) {
+      textOutput = data.output
+        .flatMap((item: any) => item.content || [])
+        .filter((c: any) => c.type === 'output_text')
+        .map((c: any) => c.text)
+        .join('\n');
+    }
+
+    // ✅ PASSO 5: LOG - Sucesso
+    await logSecurityEvent({
+      type: 'API_CALL_COMPLETED',
+      uid,
+      ip,
+      endpoint: '/api/generate-analysis',
+      statusCode: 200,
+    });
+
+    // ✅ PASSO 6: Adicionar headers de rate limit
+    Object.entries(auth.headers).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
+    return res.status(200).json({
+      content: textOutput || 'Sem conteúdo retornado'
+    });
+
+  } catch (error) {
+    console.error('Erro interno:', error);
+
+    await logSecurityEvent({
+      type: 'API_CALL_ERROR',
+      endpoint: '/api/generate-analysis',
+      statusCode: 500,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' },
+    });
+
+    return res.status(500).json({
+      error: 'Erro ao gerar análise'
+    });
+  }
+}
