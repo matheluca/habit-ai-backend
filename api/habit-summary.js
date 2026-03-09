@@ -7,11 +7,14 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req, res) {
-  // CORS
+  // =============================
+  // CORS - PRIMEIRO
+  // =============================
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   
+  // ✅ HANDLE OPTIONS PRIMEIRO (antes de qualquer autenticação)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
