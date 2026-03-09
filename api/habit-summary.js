@@ -59,7 +59,7 @@ Analise os comentários dos últimos 7 dias e identifique:
 - sugestões explicitamente escritas
 
 Comentários:
-${limitedComments.join("\n")}
+${limitedComments.map(c => c.text).join("\n")}
           `,
         },
       ],
