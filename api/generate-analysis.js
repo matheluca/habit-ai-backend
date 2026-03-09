@@ -53,7 +53,7 @@ Analise os comentários abaixo e gere:
 4️⃣ Ajustes estratégicos
 
 Comentários:
-${limitedComments.join("\n")}
+${limitedComments.map(c => c.text).join("\n")}
           `,
         },
       ],
